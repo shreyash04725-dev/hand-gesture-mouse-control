@@ -35,6 +35,26 @@ This project uses computer vision and hand tracking to control the mouse using h
 * Two Fingers Move → Scroll
 * Tap on Virtual Keyboard → Type
 
+## 🧠 How It Works
+
+* Uses MediaPipe Hand Landmarker to detect 21 hand landmarks
+* Tracks fingertip positions in real-time
+* Maps hand coordinates to screen coordinates
+* Detects gestures using distance between fingers
+* Executes mouse actions using PyAutoGUI
+
+## 🎯 Applications
+
+* Touchless computer interaction
+* Accessibility tools
+* Gesture-based UI systems
+* Smart interfaces
+
+## ⚠️ Limitations
+
+* Requires good lighting conditions
+* Works best with a single hand
+* Accuracy depends on camera quality
 
 ## 👨‍💻 Author
 
