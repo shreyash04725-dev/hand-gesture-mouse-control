@@ -1,9 +1,3 @@
-"""
-Gesture-Controlled Virtual Keyboard & Mouse
-============================================
-Built for mediapipe that only exposes: Image, ImageFormat, tasks
-No mp.solutions, no mp.framework — uses only what's actually installed.
-"""
 
 import cv2
 import numpy as np
@@ -14,7 +8,6 @@ import urllib.request
 from collections import deque
 from virtual_keyboard import VirtualKeyboard
 
-# ── MediaPipe — only the three things that actually exist ─────────────────────
 import mediapipe as mp
 from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import (
@@ -23,19 +16,19 @@ from mediapipe.tasks.python.vision import (
     RunningMode,
 )
 
-# ── Safety ────────────────────────────────────────────────────────────────────
+
 pyautogui.FAILSAFE = False
 pyautogui.PAUSE = 0
 
-# ── Screen & camera ───────────────────────────────────────────────────────────
+
 SCREEN_W, SCREEN_H = pyautogui.size()
 CAM_W, CAM_H = 1280, 720
 
-# ── Smoothing ─────────────────────────────────────────────────────────────────
+
 SMOOTH_FACTOR = 0.25
 prev_mouse_x, prev_mouse_y = 0, 0
 
-# ── Thresholds ────────────────────────────────────────────────────────────────
+
 CLICK_THRESHOLD  = 35
 SCROLL_THRESHOLD = 15
 GESTURE_COOLDOWN = 0.35
@@ -47,13 +40,11 @@ last_scroll_time = 0
 last_key_time    = 0
 finger_y_history = deque(maxlen=6)
 
-# ── Latest landmarks from async callback ──────────────────────────────────────
+
 latest_landmarks = [None]
 
-# ── Virtual keyboard ──────────────────────────────────────────────────────────
 vkb = VirtualKeyboard(start_x=80, start_y=400, key_w=70, key_h=60)
 
-# ── Hand skeleton connection pairs (21 landmarks) ─────────────────────────────
 HAND_CONNECTIONS = [
     (0,1),(1,2),(2,3),(3,4),        # thumb
     (0,5),(5,6),(6,7),(7,8),         # index
@@ -64,7 +55,6 @@ HAND_CONNECTIONS = [
 ]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 def distance(p1, p2):
     return np.hypot(p1[0] - p2[0], p1[1] - p2[1])
 
@@ -107,7 +97,7 @@ def on_result(result, output_image, timestamp_ms):
     latest_landmarks[0] = result.hand_landmarks[0] if result.hand_landmarks else None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 def main():
     global last_left_click, last_right_click, last_scroll_time, last_key_time
 
@@ -139,7 +129,7 @@ def main():
         frame = cv2.flip(frame, 1)
         rgb   = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # Feed frame to detector
+
         mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
         detector.detect_async(mp_img, ts)
         ts += 1
@@ -155,13 +145,13 @@ def main():
             thumb_tip  = lm_px(lms[4],  CAM_W, CAM_H)
             middle_tip = lm_px(lms[12], CAM_W, CAM_H)
 
-            # 1. Mouse movement (index fingertip)
+            
             raw_mx = int(np.interp(index_tip[0], [0, CAM_W], [0, SCREEN_W]))
             raw_my = int(np.interp(index_tip[1], [0, int(CAM_H * 0.7)], [0, SCREEN_H]))
             pyautogui.moveTo(*smooth_move(raw_mx, raw_my))
             cv2.circle(frame, index_tip, 10, (0, 255, 100), -1)
 
-            # 2. Left click (thumb + index pinch)
+           
             if distance(thumb_tip, index_tip) < CLICK_THRESHOLD and \
                now - last_left_click > GESTURE_COOLDOWN:
                 pyautogui.click()
@@ -169,7 +159,7 @@ def main():
                 cv2.putText(frame, "LEFT CLICK", (20, 50),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3)
 
-            # 3. Right click (thumb + middle pinch)
+            
             if distance(thumb_tip, middle_tip) < CLICK_THRESHOLD and \
                now - last_right_click > GESTURE_COOLDOWN:
                 pyautogui.rightClick()
@@ -177,7 +167,7 @@ def main():
                 cv2.putText(frame, "RIGHT CLICK", (20, 100),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 100, 255), 3)
 
-            # 4. Scroll (index + middle held close, move up/down)
+        
             if distance(index_tip, middle_tip) < 60:
                 mid_y = (index_tip[1] + middle_tip[1]) // 2
                 finger_y_history.append(mid_y)
@@ -193,7 +183,7 @@ def main():
             else:
                 finger_y_history.clear()
 
-            # 5. Virtual keyboard tap
+        
             if now - last_key_time > KEY_COOLDOWN:
                 pressed = vkb.check_tap(index_tip, thumb_tip, CLICK_THRESHOLD)
                 if pressed:
